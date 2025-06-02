@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
+from .register_ops import foo
 
-__all__ = ["__version__", "kepler"]
-
-from .cuda_examples import kepler
-from .cuda_examples_version import version as __version__
+__all__ = ("foo",)
