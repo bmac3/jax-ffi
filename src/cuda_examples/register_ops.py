@@ -1,6 +1,6 @@
 from functools import partial
 
-from . import gpu_ops
+from . import _gpu_ops
 
 import numpy as np
 
@@ -64,7 +64,7 @@ def _foo_fwd_cuda_lowering(ctx, a, b):
 
     size = np.prod(a_type.shape).astype(np.int64)
 
-    opaque = gpu_ops.build_foo_fwd_descriptor(
+    opaque = _gpu_ops.build_foo_fwd_descriptor(
         size
     )
 
@@ -99,7 +99,7 @@ def _foo_bwd_cuda_lowering(
 
     size = np.prod(output_type.shape).astype(np.int64)
 
-    opaque = gpu_ops.build_foo_bwd_descriptor(
+    opaque = _gpu_ops.build_foo_bwd_descriptor(
         size
     )
 
@@ -153,7 +153,7 @@ def _foo_bwd_abstract(
 
 
 def _register():
-    for _name, _value in gpu_ops.registrations().items():
+    for _name, _value in _gpu_ops.registrations().items():
         xla_client.register_custom_call_target(_name, _value, platform="gpu")
 
     mlir.register_lowering(
