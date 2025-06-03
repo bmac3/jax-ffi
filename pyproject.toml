@@ -1,12 +1,15 @@
-[build-system]
-requires = ["scikit-build-core", "nanobind", "jax>=0.4.31"]
-build-backend = "scikit_build_core.build"
-
 [project]
-name = "jax_ffi_example"
-version = "0.0.1"
-requires-python = ">=3.10"
-dependencies = ["jax"]
+name = "cuda_examples"
+requires-python = ">=3.9"
+dependencies = ["jax>=0.4.16", "jaxlib>=0.4.16"]
+dynamic = ["version"]
 
 [project.optional-dependencies]
-test = ["pytest", "absl-py"]
+test = ["pytest"]
+
+[build-system]
+requires = ["pybind11>=2.6", "scikit-build-core>=0.5"]
+build-backend = "scikit_build_core.build"
+
+[tool.scikit-build]
+wheel.install-dir = "cuda_examples"

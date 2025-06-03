@@ -2,9 +2,12 @@ from functools import partial
 
 from . import gpu_ops
 
+import numpy as np
+
 import jax
 import jax.numpy as jnp
 from jax import core, dtypes
+from jax.extend import core
 from jax.core import ShapedArray
 from jax.interpreters import xla
 from jax.lib import xla_client
@@ -27,13 +30,16 @@ def foo_fwd(a, b):
         a,
         b,
     )
-    return output, (output, b_plus_1)
+    return output, (a, b, output, b_plus_1)
 
 
-def foo_bwd(grad, output, b_plus_1):
+def foo_bwd(res, grad):
+    a, b, output, b_plus_1 = res
     a_grad, b_grad = _foo_bwd.bind(
         grad,
         output,
+        a,
+        b,
         b_plus_1,
     )
     return a_grad, b_grad
@@ -82,14 +88,16 @@ def _foo_bwd_cuda_lowering(
     ctx,
     grad,
     output,
-    b_plus_1,
     a,
-    b
+    b,
+    b_plus_1
 ):
+    output_type = ir.RankedTensorType(output.type)
     a_type = ir.RankedTensorType(a.type)
     b_type = ir.RankedTensorType(b.type)
+    b_plus_1_type = ir.RankedTensorType(b_plus_1.type)
 
-    size = np.prod(a_type.shape).astype(np.int64)
+    size = np.prod(output_type.shape).astype(np.int64)
 
     opaque = gpu_ops.build_foo_bwd_descriptor(
         size
@@ -98,14 +106,15 @@ def _foo_bwd_cuda_lowering(
     out = custom_call(
         b"gpu_foo_bwd",
         result_types=[
-            ir.RankedTensorType.get(a_type.shape, a_type.element_type),
-            ir.RankedTensorType.get(b_type.shape, b_type.element_type),
+            ir.RankedTensorType.get(output_type.shape, output_type.element_type),
+            ir.RankedTensorType.get(output_type.shape, output_type.element_type),
         ],
-        operands=[grad, output, b_plus_1],
+        operands=[grad, a, b_plus_1],
         backend_config=opaque,
         operand_layouts=default_layouts(
+            output_type.shape,
             a_type.shape,
-            a_type.shape,
+            b_plus_1_type.shape
         ),
         result_layouts=default_layouts(
             a_type.shape,
@@ -129,9 +138,9 @@ def _foo_fwd_abstract(a, b):
 def _foo_bwd_abstract(
     grad,
     output,
-    b_plus_1,
     a,
     b,
+    b_plus_1
 ):
     a_dtype = dtypes.canonicalize_dtype(a.dtype)
     b_dtype = dtypes.canonicalize_dtype(b.dtype)
@@ -139,13 +148,13 @@ def _foo_bwd_abstract(
     assert a.shape == b.shape
     return (
         ShapedArray(a.shape, a_dtype),
-        ShapedArray(a.shape, a_dtype),
+        ShapedArray(b.shape, b_dtype),
     )
 
 
 def _register():
-    xla_client.register_custom_call_target(b"gpu_foo_fwd", _foo_fwd_cuda_lowering, platform="gpu")
-    xla_client.register_custom_call_target(b"gpu_foo_bwd", _foo_bwd_cuda_lowering, platform="gpu")
+    for _name, _value in gpu_ops.registrations().items():
+        xla_client.register_custom_call_target(_name, _value, platform="gpu")
 
     mlir.register_lowering(
         _foo_fwd,

@@ -62,7 +62,7 @@ void ThrowIfError(cudaError_t error) {
 }
 
 
-inline void gpu_foo_fwd(cudaStream_t stream, void **buffers, const char *opaque,
+void gpu_foo_fwd(cudaStream_t stream, void **buffers, const char *opaque,
                          std::size_t opaque_len) {
   const FooFwdDescriptor &d = *UnpackDescriptor<FooFwdDescriptor>(opaque, opaque_len);
 
@@ -80,7 +80,7 @@ inline void gpu_foo_fwd(cudaStream_t stream, void **buffers, const char *opaque,
 
 
 
-inline void gpu_foo_bwd(cudaStream_t stream, void **buffers, const char *opaque,
+void gpu_foo_bwd(cudaStream_t stream, void **buffers, const char *opaque,
                           std::size_t opaque_len) {
   const FooBwdDescriptor &d = *UnpackDescriptor<FooBwdDescriptor>(opaque, opaque_len);
 

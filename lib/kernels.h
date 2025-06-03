@@ -7,6 +7,7 @@
 #include <cstdint>
 
 namespace cuda_examples {
+  
 struct FooFwdDescriptor {
   size_t n;
 };

@@ -10,6 +10,7 @@
 using namespace cuda_examples;
 
 namespace {
+
 pybind11::dict Registrations() {
   pybind11::dict dict;
   dict["gpu_foo_fwd"] = EncapsulateFunction(gpu_foo_fwd);
@@ -24,4 +25,5 @@ PYBIND11_MODULE(gpu_ops, m) {
   m.def("build_foo_bwd_descriptor",
         [](size_t n) { return PackDescriptor(FooBwdDescriptor{n}); });
 }
+
 }  // namespace
